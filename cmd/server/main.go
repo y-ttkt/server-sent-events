@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -25,10 +28,24 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	fmt.Printf("Listening on port %s\n", s.Addr)
-	if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("http server failed: %v", err)
+	go func() {
+		log.Printf("listening on %s", s.Addr)
+		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	// グレースフルシャットダウン
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	<-sig
+	log.Println("shutting down...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := s.Shutdown(ctx); err != nil {
+		log.Printf("graceful shutdown error: %v", err)
 	}
+	log.Println("bye")
 }
 
 func logMiddleware(next http.Handler) http.Handler {
