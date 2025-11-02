@@ -37,7 +37,6 @@ func (e Event) WriteTo(w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		// Split by newlines just in case; SSE requires each line prefixed by "data: "
 		lines := splitLines(string(b))
 		for _, line := range lines {
 			if _, err := fmt.Fprintf(bw, "data: %s\n", line); err != nil {
@@ -45,7 +44,6 @@ func (e Event) WriteTo(w io.Writer) error {
 			}
 		}
 	}
-	// End of message
 	if _, err := fmt.Fprint(bw, "\n"); err != nil {
 		return err
 	}
