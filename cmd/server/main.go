@@ -22,7 +22,7 @@ func main() {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	s := http.Server{
+	s := &http.Server{
 		Addr:              fmt.Sprintf(":%s", getenv("PORT", "8080")),
 		Handler:           logMiddleware(corsMiddleware(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
